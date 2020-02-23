@@ -1,61 +1,29 @@
+# building app and required component for running the app
 version: '3'
 services:
-  # Our services definition below:
-
-  #Nginx Service
-  web:
-    image: nginx
-    container_name: web
-    restart: unless-stopped
-    tty: true
-    ports:
-      - "8080:80"
-    networks:
-      - app-network
-    volumes:
-      - ./:/var/www
-      - ./nginx/conf.d/:/etc/nginx/conf.d/
-
-  #MariaDB Service
   database:
-    image: mariadb
-    container_name: database
-    restart: unless-stopped
-    tty: true
+    build: docker/mysql
     ports:
-      - "33060:3306"
+      - "3306:3306"
     environment:
-      MYSQL_DATABASE: homestead
-      MYSQL_USER: homestead
-      MYSQL_PASSWORD: your_password
-      MYSQL_ROOT_PASSWORD: your_mysql_root_password
-    networks:
-      - app-network
+      - MYSQL_USER=laravel
+      - MYSQL_PASSWORD=laravel
+  web:
+    build: docker/nginx
+    ports:
+      - "80:80"
+    # we have configured our nginx container to have its webroot /var/www/public
+    # so we have to mount our project [project name here] folder to /var/www
+    # we already have "public" folder in our project
     volumes:
-      - dbdata:/var/lib/mysql
-
-  #PHP Service
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    #image: digitalocean.com/php
-    container_name: app
-    restart: unless-stopped
-    tty: true
-    environment:
-      SERVICE_NAME: app
-      SERVICE_TAGS: dev
-    working_dir: /var/www
-    networks:
-      - app-network
+      - ./laravel_blog_FGT:/var/www
+    links:
+      - php
+    depends_on:
+      - php
+  php:
+    build: docker/php
     volumes:
-      - ./:/var/www
-
-#Docker Networks
-networks:
-  app-network:
-    driver: bridge
-
-volumes:
-  dbdata:
+      - ./laravel_blog_FGT:/var/www
+    expose:
+      - "9000"
